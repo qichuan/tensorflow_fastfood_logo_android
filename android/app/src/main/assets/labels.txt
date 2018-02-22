@@ -1,0 +1,4 @@
+burgerking
+kfc
+mcdonalds
+pizzahut

@@ -1,0 +1,13 @@
+*.iml
+.idea
+.gradle
+*.zip
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+generated
+intermediates
+*/build/intermediates/
+*/build
+/build
+/app/release
