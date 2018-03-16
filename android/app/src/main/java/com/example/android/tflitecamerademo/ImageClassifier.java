@@ -30,7 +30,6 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -101,10 +100,10 @@ public class ImageClassifier {
   }
 
   /** Classifies a frame from the preview stream. */
-  String classifyFrame(Bitmap bitmap) {
+  ImageClassificationResult classifyFrame(Bitmap bitmap) {
     if (tflite == null) {
       Log.e(TAG, "Image classifier has not been initialized; Skipped.");
-      return "Uninitialized Classifier.";
+      return new ImageClassificationResult("Uninitialized Classifier.", 0f);
     }
     convertBitmapToByteBuffer(bitmap);
     // Here's where the magic happens!!!
@@ -116,10 +115,7 @@ public class ImageClassifier {
     // smooth the results
     applyFilter();
 
-    // print the results
-    String textToShow = printTopKLabels();
-    textToShow = Long.toString(endTime - startTime) + "ms" + textToShow;
-    return textToShow;
+    return generateClassificationResult();
   }
 
   void applyFilter(){
@@ -197,8 +193,7 @@ public class ImageClassifier {
     Log.d(TAG, "Timecost to put values into ByteBuffer: " + Long.toString(endTime - startTime));
   }
 
-  /** Prints top-K labels, to be shown in UI as the results. */
-  private String printTopKLabels() {
+  private ImageClassificationResult generateClassificationResult() {
     for (int i = 0; i < labelList.size(); ++i) {
       sortedLabels.add(
           new AbstractMap.SimpleEntry<>(labelList.get(i), labelProbArray[0][i]));
@@ -206,12 +201,18 @@ public class ImageClassifier {
         sortedLabels.poll();
       }
     }
-    String textToShow = "";
+    String log = "";
     final int size = sortedLabels.size();
+
     for (int i = 0; i < size; ++i) {
-      Map.Entry<String, Float> label = sortedLabels.poll();
-      textToShow = String.format("\n%s: %4.2f",label.getKey(),label.getValue()) + textToShow;
+        Map.Entry<String, Float> label = sortedLabels.poll();
+        log = String.format("\n%s: %4.2f", label.getKey(), label.getValue()) + log;
+        if (i == size - 1 && label.getValue() > 0.6 ) {
+            return new ImageClassificationResult(label.getKey(), label.getValue());
+        }
     }
-    return textToShow;
+    Log.d("Classifier", log);
+
+    return new ImageClassificationResult("notRecognized", 0f);
   }
 }
